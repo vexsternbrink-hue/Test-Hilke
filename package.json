@@ -1,0 +1,27 @@
+{
+  "name": "biohof-tambke-apfelstand",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Biohof Tambke – Dein Apfelstand auf dem Markt. 3D-scrollbare Single-Page-Website (React + Vite + Three.js).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
+    "framer-motion": "^12.23.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "tailwindcss": "^4.1.0",
+    "vite": "^8.3.1"
+  }
+}
