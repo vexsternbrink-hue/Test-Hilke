@@ -4,9 +4,11 @@ import { Canvas } from '@react-three/fiber';
 import { ContactShadows } from '@react-three/drei';
 import MarketStall from '../three/MarketStall';
 
-export default function MarketCanvas({ selected, onSelect }) {
+export default function MarketCanvas({ selected, onSelect, active = true }) {
   return (
     <Canvas
+      // Außerhalb des Viewports nicht rendern – sonst laufen zwei WebGL-Szenen dauerhaft parallel.
+      frameloop={active ? 'always' : 'never'}
       shadows="percentage"
       dpr={[1, 1.75]}
       camera={{ fov: 38, position: [0, 2.2, 9.5], near: 0.1, far: 60 }}

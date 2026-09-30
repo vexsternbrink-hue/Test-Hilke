@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
+import { useHoverCursor } from '../lib/cursor';
+import { damp } from '../lib/scroll';
 
 // Prozedurales Apfel-Modell (kein GLTF nötig): Lathe-Profil + Stiel + Blatt.
 // Ein Geometrie-Set wird global geteilt → sehr günstig auch bei 100+ Äpfeln.
@@ -59,18 +61,19 @@ export default function Apple({
   const ref = useRef();
   const [hovered, setHovered] = useState(false);
   const spin = useRef(Math.random() * Math.PI * 2);
+  useHoverCursor(hovered);
 
   useFrame((_, dt) => {
-    if (!ref.current) return;
-    const target = hovered ? scale * 1.18 : scale;
-    ref.current.scale.lerp(new THREE.Vector3(target, target, target), 1 - Math.pow(0.001, dt));
+    // Nicht-interaktive Äpfel (Kisten, Stand) bewegen sich nie – spart ~100 Updates pro Frame.
+    if (!ref.current || !interactive) return;
+    const k = damp(0.001, dt);
+    const s = THREE.MathUtils.lerp(ref.current.scale.x, hovered ? scale * 1.18 : scale, k);
+    ref.current.scale.setScalar(s);
     if (hovered) {
-      spin.current += dt * 2.2;
+      spin.current += Math.min(dt, 0.1) * 2.2;
       ref.current.rotation.y = spin.current;
-      ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, hoverLift, 0.12);
-    } else {
-      ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, 0, 0.12);
     }
+    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, hovered ? hoverLift : 0, damp(0.0005, dt));
   });
 
   return (
@@ -83,16 +86,12 @@ export default function Apple({
             ? (e) => {
                 e.stopPropagation();
                 setHovered(true);
-                document.body.style.cursor = 'pointer';
               }
             : undefined
         }
         onPointerOut={
           interactive
-            ? () => {
-                setHovered(false);
-                document.body.style.cursor = 'auto';
-              }
+            ? () => setHovered(false)
             : undefined
         }
         onClick={

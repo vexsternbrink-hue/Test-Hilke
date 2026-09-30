@@ -1,14 +1,39 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SORTIMENT } from '../data/sortiment';
 
 // Lazy Loading: die zweite Canvas + Marktstand-Geometrie werden erst geladen,
-// wenn die Sektion gerendert wird.
+// wenn die Sektion in die Nähe des Viewports kommt.
 const MarketCanvas = lazy(() => import('./MarketCanvas'));
+
+/** `near`: einmalig true, sobald das Element fast sichtbar ist. `inView`: aktuell sichtbar. */
+function useViewport(ref) {
+  const [state, setState] = useState({ near: false, inView: false });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setState({ near: true, inView: true });
+      return undefined;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => setState((s) => ({ near: s.near || entry.isIntersecting, inView: entry.isIntersecting })),
+      { rootMargin: '400px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+  return state;
+}
+
+function StageFallback() {
+  return <div className="grid h-full w-full place-items-center text-sm text-[#8C6E62]">Marktstand wird aufgebaut …</div>;
+}
 
 export default function MarketStand3D() {
   const [selected, setSelected] = useState('apfel');
   const item = SORTIMENT.find((s) => s.id === selected);
+  const stageRef = useRef(null);
+  const { near, inView } = useViewport(stageRef);
 
   return (
     <section id="markt" className="relative z-10 bg-cream px-5 py-24 md:px-10 md:py-32" aria-label="Marktstand und Sortiment">
@@ -67,14 +92,14 @@ export default function MarketStand3D() {
           </AnimatePresence>
         </div>
 
-        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] bg-cream-dark md:aspect-[5/4]">
-          <Suspense
-            fallback={
-              <div className="grid h-full w-full place-items-center text-sm text-[#8C6E62]">Marktstand wird aufgebaut …</div>
-            }
-          >
-            <MarketCanvas selected={selected} onSelect={setSelected} />
-          </Suspense>
+        <div ref={stageRef} className="relative aspect-[4/3] w-full overflow-hidden rounded-[28px] bg-cream-dark md:aspect-[5/4]">
+          {near ? (
+            <Suspense fallback={<StageFallback />}>
+              <MarketCanvas selected={selected} onSelect={setSelected} active={inView} />
+            </Suspense>
+          ) : (
+            <StageFallback />
+          )}
           <div className="pointer-events-none absolute right-4 top-4 rounded-2xl bg-wood px-4 py-3 text-xs text-cream">
             <div className="font-semibold">Hover: Kiste hebt sich</div>
             <div className="text-[#D9C8BC]">Klick: Info-Karte</div>

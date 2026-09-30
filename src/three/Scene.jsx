@@ -1,4 +1,4 @@
-import { Suspense, useMemo, useRef } from 'react';
+import { Suspense, useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { AdaptiveDpr, PerformanceMonitor } from '@react-three/drei';
@@ -7,16 +7,25 @@ import Alley from './Alley';
 import Crate from './Crate';
 import Leaves from './Leaves';
 import { TEAM } from '../data/team';
-import { scrollState, easeInOut, lerp } from '../lib/scroll';
+import { scrollState, damp, easeInOut, lerp } from '../lib/scroll';
 
 export const CRATE_SPACING = 7;
 export const crateZ = (i) => -10 - i * CRATE_SPACING;
 
 /** Kamera-Rig: fährt per Scroll vom Hero-Baum in die Marktallee. */
 function CameraRig({ isMobile }) {
-  const { camera } = useThree();
+  const camera = useThree((s) => s.camera);
   const target = useMemo(() => new THREE.Vector3(), []);
   const look = useMemo(() => new THREE.Vector3(), []);
+  const lookTarget = useMemo(() => new THREE.Vector3(), []);
+
+  // Das `camera`-Prop des Canvas gilt nur beim Erzeugen – bei Wechsel Desktop ↔ Mobile
+  // (Fenstergröße, Drehen des Geräts) muss das Sichtfeld hier nachgezogen werden.
+  useEffect(() => {
+    camera.fov = isMobile ? 55 : 42;
+    camera.updateProjectionMatrix();
+  }, [camera, isMobile]);
+
   useFrame((_, dt) => {
     const h = easeInOut(scrollState.hero);
     const t = scrollState.team;
@@ -38,13 +47,13 @@ function CameraRig({ isMobile }) {
     const y = lerp(heroPos[1], alleyStart[1], h) + py * 0.15;
     target.set(x, y, z);
 
-    const k = 1 - Math.pow(0.0005, dt);
+    const k = damp(0.0005, dt);
     camera.position.lerp(target, k);
 
     const lx = lerp(heroLook[0], activeSide * (isMobile ? 0.5 : 1.2) * t, h) + px * 0.6;
     const ly = lerp(heroLook[1], 1.6, h);
     const lz = lerp(heroLook[2], z - 6, h);
-    look.lerp(new THREE.Vector3(lx, ly, lz), k);
+    look.lerp(lookTarget.set(lx, ly, lz), k);
     camera.lookAt(look);
   });
   return null;
@@ -52,15 +61,13 @@ function CameraRig({ isMobile }) {
 
 function Lights() {
   const light = useRef();
-  const camTarget = useMemo(() => new THREE.Object3D(), []);
-  useFrame(({ camera, scene }) => {
+  useFrame(({ camera }) => {
     // Licht + Schattenfenster fahren mit der Kamera durch die Allee
     if (!light.current) return;
     const z = camera.position.z - 6;
     light.current.position.set(6, 10, z + 6);
-    camTarget.position.set(0, 0, z);
-    if (camTarget.parent !== scene) scene.add(camTarget);
-    light.current.target = camTarget;
+    light.current.target.position.set(0, 0, z);
+    light.current.target.updateMatrixWorld();
   });
   return (
     <>
@@ -94,9 +101,12 @@ function CrateLayer({ activeIndex, isMobile }) {
   });
 }
 
-function CameraRefBridge({ camRef }) {
-  const { camera } = useThree();
-  camRef.current = camera;
+/** Pointer-Events nur verarbeiten, solange die Szene sichtbar ist. */
+function EventToggle({ enabled }) {
+  const setEvents = useThree((s) => s.setEvents);
+  useEffect(() => {
+    setEvents({ enabled });
+  }, [enabled, setEvents]);
   return null;
 }
 
@@ -105,9 +115,12 @@ function CameraRefBridge({ camRef }) {
  * Pausiert das Rendering, sobald die Sektionen aus dem Viewport sind.
  */
 export default function Scene({ activeIndex, isMobile, visible }) {
-  const camRef = useRef();
   return (
     <Canvas
+      // Die Sektionen liegen über der Canvas (z-10) und würden alle Mausevents abfangen –
+      // daher lauscht R3F am #root, damit die Hero-Äpfel auf Hover reagieren.
+      eventSource={document.getElementById('root')}
+      eventPrefix="client"
       shadows="percentage"
       dpr={[1, isMobile ? 1.5 : 2]}
       frameloop={visible ? 'always' : 'never'}
@@ -124,14 +137,14 @@ export default function Scene({ activeIndex, isMobile, visible }) {
       <PerformanceMonitor>
         <AdaptiveDpr pixelated={false} />
       </PerformanceMonitor>
+      <EventToggle enabled={visible} />
       <CameraRig isMobile={isMobile} />
-      <CameraRefBridge camRef={camRef} />
       <Lights />
       <Suspense fallback={null}>
         <AppleTree position={isMobile ? [0, 0, -1] : [3.4, 0, 0]} scale={isMobile ? 1.15 : 1.25} />
         <Alley length={CRATE_SPACING * TEAM.length + 30} />
         <CrateLayer activeIndex={activeIndex} isMobile={isMobile} />
-        <Leaves count={isMobile ? 80 : 160} follow={camRef} />
+        <Leaves count={isMobile ? 80 : 160} />
       </Suspense>
     </Canvas>
   );

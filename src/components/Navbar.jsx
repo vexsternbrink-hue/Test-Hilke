@@ -32,7 +32,7 @@ export default function Navbar() {
               <path d="M10 3c2-1 4 0 4 2" />
             </svg>
           </span>
-          <span className="font-display text-xl font-semibold">Biohof Tambke</span>
+          <span className="whitespace-nowrap font-display text-xl font-semibold">Biohof Tambke</span>
         </a>
         <div className="hidden items-center gap-9 text-[15px] font-medium md:flex">
           {links.map(([href, label]) => (
@@ -43,9 +43,11 @@ export default function Navbar() {
         </div>
         <a
           href="#markt"
-          className="inline-flex h-11 items-center rounded-full bg-wood px-5 text-sm font-semibold text-cream no-underline transition-transform hover:-translate-y-0.5"
+          className="inline-flex h-11 items-center whitespace-nowrap rounded-full bg-wood px-5 text-sm font-semibold text-cream no-underline transition-transform hover:-translate-y-0.5"
         >
-          Wochenmarkt Volksdorf
+          {/* Auf schmalen Screens passt der volle Text nicht neben das Logo */}
+          <span className="sm:hidden">Marktstand</span>
+          <span className="hidden sm:inline">Wochenmarkt Volksdorf</span>
         </a>
       </nav>
     </motion.header>

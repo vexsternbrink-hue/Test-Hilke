@@ -14,6 +14,8 @@ export const clamp01 = (v) => Math.min(1, Math.max(0, v));
 export const lerp = (a, b, t) => a + (b - a) * t;
 export const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 export const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+/** Bildrate-unabhängiger Glättungsfaktor; dt wird gekappt, damit es nach Pausen nicht springt. */
+export const damp = (rate, dt) => 1 - Math.pow(rate, Math.min(dt, 0.1));
 
 export const prefersReducedMotion = () =>
   typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
