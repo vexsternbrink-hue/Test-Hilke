@@ -5,12 +5,15 @@ import { seeded } from '../lib/random';
 
 const dummy = new THREE.Object3D();
 const palette = ['#4A7C23', '#5A9130', '#C9A227', '#C41E3A', '#8F7358'];
+// Konstante statt Default-Array im Parameter: ein neues Array pro Render hätte
+// useMemo bei jedem Rerender der Szene (z. B. Teamwechsel) ausgelöst → Blätter sprangen zurück.
+const DEFAULT_AREA = [18, 10, 18];
 
 /**
  * Fallende Blätter als InstancedMesh (günstig: 1 Drawcall).
- * `follow` – Ref auf die Kamera; die Blätter bleiben immer um sie herum.
+ * Die Blätter bleiben immer um die Kamera herum.
  */
-export default function Leaves({ count = 160, area = [18, 10, 18], follow }) {
+export default function Leaves({ count = 160, area = DEFAULT_AREA }) {
   const mesh = useRef();
   const state = useMemo(() => {
     const r = seeded(1234);
@@ -31,10 +34,11 @@ export default function Leaves({ count = 160, area = [18, 10, 18], follow }) {
     mesh.current.instanceColor.needsUpdate = true;
   }, [state]);
 
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock, camera }, delta) => {
     const t = clock.getElapsedTime();
-    const cx = follow?.current?.position.x ?? 0;
-    const cz = follow?.current?.position.z ?? 0;
+    const dt = Math.min(delta, 0.1); // nach pausiertem Rendering nicht alle Blätter gleichzeitig zurücksetzen
+    const cx = camera.position.x;
+    const cz = camera.position.z;
     state.forEach((l, i) => {
       l.y -= l.speed * dt;
       if (l.y < 0) l.y = area[1];

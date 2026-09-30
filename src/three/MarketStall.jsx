@@ -4,6 +4,8 @@ import { useFrame } from '@react-three/fiber';
 import Apple from './Apple';
 import { makeSignTexture, makeStripeTexture } from '../lib/textures';
 import { seeded } from '../lib/random';
+import { useHoverCursor } from '../lib/cursor';
+import { damp } from '../lib/scroll';
 
 const wood = new THREE.MeshStandardMaterial({ color: '#3E2723', roughness: 0.9 });
 const woodLight = new THREE.MeshStandardMaterial({ color: '#5A3F35', roughness: 0.9 });
@@ -12,13 +14,13 @@ const plank = new THREE.MeshStandardMaterial({ color: '#A98A72', roughness: 0.9 
 function FruitCrate({ item, x, selected, onSelect, children }) {
   const ref = useRef();
   const [hovered, setHovered] = useState(false);
+  useHoverCursor(hovered);
   useFrame((_, dt) => {
     if (!ref.current) return;
-    const k = 1 - Math.pow(0.001, dt);
+    const k = damp(0.001, dt);
     const y = hovered || selected ? 0.14 : 0;
     ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, y, k);
-    const s = selected ? 1.06 : 1;
-    ref.current.scale.lerp(new THREE.Vector3(s, s, s), k);
+    ref.current.scale.setScalar(THREE.MathUtils.lerp(ref.current.scale.x, selected ? 1.06 : 1, k));
   });
   return (
     <group
@@ -27,12 +29,8 @@ function FruitCrate({ item, x, selected, onSelect, children }) {
       onPointerOver={(e) => {
         e.stopPropagation();
         setHovered(true);
-        document.body.style.cursor = 'pointer';
       }}
-      onPointerOut={() => {
-        setHovered(false);
-        document.body.style.cursor = 'auto';
-      }}
+      onPointerOut={() => setHovered(false)}
       onClick={(e) => {
         e.stopPropagation();
         onSelect(item.id);
@@ -107,7 +105,7 @@ export default function MarketStall({ selected, onSelect }) {
 
   useFrame(({ pointer }, dt) => {
     if (!root.current) return;
-    const k = 1 - Math.pow(0.01, dt);
+    const k = damp(0.01, dt);
     root.current.rotation.y = THREE.MathUtils.lerp(root.current.rotation.y, pointer.x * 0.28, k);
     root.current.rotation.x = THREE.MathUtils.lerp(root.current.rotation.x, -pointer.y * 0.08, k);
   });

@@ -87,10 +87,15 @@ export default function App() {
       scrollState.pointer.y = -((e.clientY / window.innerHeight) * 2 - 1);
     };
     update();
+    // Layout kann sich ohne Scroll-Event ändern (Webfonts, nachgeladener Marktstand,
+    // mobile Adressleiste) – sonst rechnet die Kamera mit veralteten Sektionsgrenzen.
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onScroll) : null;
+    ro?.observe(document.body);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
     window.addEventListener('pointermove', onMove, { passive: true });
     return () => {
+      ro?.disconnect();
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
       window.removeEventListener('pointermove', onMove);

@@ -67,32 +67,35 @@ const Hero3D = forwardRef(function Hero3D({ progress = 0 }, ref) {
         </motion.div>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.2, duration: 1 }}
-        style={{ opacity: fade }}
-        className="pointer-events-none absolute inset-x-0 bottom-6 mx-auto hidden w-full max-w-[1280px] items-end justify-between px-5 md:flex md:px-10"
-      >
-        <div className="eyebrow flex items-center gap-3 text-cream">
-          <span className="flex h-11 w-7 justify-center rounded-full border-[1.5px] border-cream pt-2">
-            <motion.span
-              animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }}
-              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
-              className="h-2 w-1 rounded-full bg-cream"
-            />
-          </span>
-          Scrollen · durch die Marktallee
-        </div>
-        <div className="hidden gap-10 text-sm text-cream md:flex">
-          <span>
-            <strong className="font-semibold">Wochenmarkt Volksdorf</strong>
-          </span>
-          <span>
-            <strong className="font-semibold">Familienbetrieb</strong> · Hilke &amp; Rolf Tambke
-          </span>
-        </div>
-      </motion.div>
+      {/* Außen: Ausblenden beim Scrollen; innen: nur das Einblenden. Auf einem Element würden
+          animate- und style-opacity sich gegenseitig überschreiben. */}
+      <div style={{ opacity: fade }} className="pointer-events-none absolute inset-x-0 bottom-6">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 2.2, duration: 1 }}
+          className="mx-auto hidden w-full max-w-[1280px] items-end justify-between px-5 md:flex md:px-10"
+        >
+          <div className="eyebrow flex items-center gap-3 text-cream">
+            <span className="flex h-11 w-7 justify-center rounded-full border-[1.5px] border-cream pt-2">
+              <motion.span
+                animate={{ y: [0, 10, 0], opacity: [1, 0.2, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                className="h-2 w-1 rounded-full bg-cream"
+              />
+            </span>
+            Scrollen · durch die Marktallee
+          </div>
+          <div className="hidden gap-10 text-sm text-cream md:flex">
+            <span>
+              <strong className="font-semibold">Wochenmarkt Volksdorf</strong>
+            </span>
+            <span>
+              <strong className="font-semibold">Familienbetrieb</strong> · Hilke &amp; Rolf Tambke
+            </span>
+          </div>
+        </motion.div>
+      </div>
     </section>
   );
 });

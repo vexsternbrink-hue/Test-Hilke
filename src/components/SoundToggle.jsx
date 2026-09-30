@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Optionale Marktgeräusche – synthetisiert per WebAudio (kein Asset nötig):
@@ -6,20 +6,16 @@ import { useEffect, useRef, useState } from 'react';
  */
 export default function SoundToggle() {
   const [on, setOn] = useState(false);
-  const ctxRef = useRef(null);
 
   useEffect(() => {
-    if (!on) {
-      ctxRef.current?.close();
-      ctxRef.current = null;
-      return;
-    }
+    if (!on) return undefined;
     const AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
+    if (!AC) return undefined;
     const ctx = new AC();
-    ctxRef.current = ctx;
+    // Manche Browser starten den Kontext „suspended“, obwohl er nach einem Klick entsteht.
+    ctx.resume().catch(() => {});
     const master = ctx.createGain();
-    master.gain.value = 0;
+    master.gain.setValueAtTime(0, ctx.currentTime);
     master.connect(ctx.destination);
     master.gain.linearRampToValueAtTime(0.35, ctx.currentTime + 1.5);
 
@@ -70,8 +66,9 @@ export default function SoundToggle() {
     crowd.start();
     lfo2.start();
 
+    // Nur hier schließen: ein zweites close() auf einem geschlossenen Kontext wirft InvalidStateError.
     return () => {
-      ctx.close();
+      ctx.close().catch(() => {});
     };
   }, [on]);
 

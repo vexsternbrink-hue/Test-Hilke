@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 import Apple from './Apple';
 import { GROUPS } from '../data/team';
 import { loadPortrait, makeLabelTexture, makePortraitTexture } from '../lib/textures';
+import { damp } from '../lib/scroll';
 
 const wood = new THREE.MeshStandardMaterial({ color: '#A98A72', roughness: 0.9 });
 const woodDark = new THREE.MeshStandardMaterial({ color: '#8F7358', roughness: 0.9 });
@@ -22,7 +23,9 @@ export default function Crate({ member, side = 1, active = false, ...props }) {
 
   useEffect(() => {
     let alive = true;
-    loadPortrait(member, color, (tex) => alive && setPortrait(tex));
+    loadPortrait(member, color, (tex) => {
+      if (alive) setPortrait(tex);
+    });
     return () => {
       alive = false;
     };
@@ -33,7 +36,7 @@ export default function Crate({ member, side = 1, active = false, ...props }) {
   useFrame(({ clock }, dt) => {
     if (!inner.current) return;
     const t = clock.getElapsedTime();
-    const k = 1 - Math.pow(0.002, dt);
+    const k = damp(0.002, dt);
     // Schweben
     inner.current.position.y = THREE.MathUtils.lerp(
       inner.current.position.y,
@@ -44,8 +47,7 @@ export default function Crate({ member, side = 1, active = false, ...props }) {
     const targetRot = side * -0.55 + Math.sin(t * 0.7 + phase) * 0.03 + (active ? side * 0.25 : 0);
     inner.current.rotation.y = THREE.MathUtils.lerp(inner.current.rotation.y, targetRot, k);
     inner.current.rotation.z = Math.sin(t * 0.9 + phase) * 0.015;
-    const s = active ? 1.12 : 1;
-    inner.current.scale.lerp(new THREE.Vector3(s, s, s), k);
+    inner.current.scale.setScalar(THREE.MathUtils.lerp(inner.current.scale.x, active ? 1.12 : 1, k));
   });
 
   return (
