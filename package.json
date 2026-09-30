@@ -3,14 +3,19 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Biohof Tambke – Dein Apfelstand auf dem Markt. 3D-scrollbare Single-Page-Website (React + Vite + Three.js).",
+  "description": "Biohof Tambke – Website für den Marktstand auf dem Wochenmarkt Volksdorf (React + Vite, mit kleiner Node-API für Vorbestellungen und Admin-Bereich).",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "start": "node server/index.js",
+    "lint": "eslint .",
+    "test": "node --test",
+    "admin:hash": "node server/hash-password.js"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
     "framer-motion": "^12.23.0",
@@ -19,9 +24,17 @@
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.1.0",
     "@vitejs/plugin-react": "^6.1.1",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.12.0",
     "tailwindcss": "^4.1.0",
     "vite": "^8.3.1"
+  },
+  "engines": {
+    "node": ">=20.12"
   }
 }
