@@ -25,13 +25,43 @@ function notifyNewOrder(order) {
   console.info(`[vorbestellung] ${order.ref} · ${order.firstName} ${order.lastName} · Abholung ${order.pickupDate}`);
 }
 
-export function createAppApi(env = process.env, { production = false } = {}) {
-  if (production && !env.ADMIN_PASSWORD_HASH && env.ADMIN_PASSWORD) {
-    console.warn('[auth] ADMIN_PASSWORD (Klartext) ist gesetzt. Für den Produktivbetrieb bitte ADMIN_PASSWORD_HASH verwenden.');
+/**
+ * Liest die Admin-Zugangsdaten aus der Umgebung – bewusst fehlertolerant, weil sie meist per Hand
+ * im Dashboard des Hosters eingetragen werden:
+ *  - Leerzeichen/Zeilenumbrüche am Anfang oder Ende werden entfernt.
+ *  - Steht in ADMIN_PASSWORD_HASH kein gültiger Hash (beginnt nicht mit „scrypt:“), wird der Wert
+ *    wie ein normales Passwort behandelt – mit Warnung im Protokoll.
+ * Das Passwort selbst wird nie protokolliert.
+ */
+export function resolveAdminCredentials(env) {
+  const hash = String(env.ADMIN_PASSWORD_HASH || '').trim();
+  const plain = String(env.ADMIN_PASSWORD || '').trim();
+  const validHash = /^scrypt:[0-9a-f]+:[0-9a-f]+$/i.test(hash);
+
+  if (validHash) {
+    if (plain) console.warn('[auth] ADMIN_PASSWORD wird ignoriert, weil ADMIN_PASSWORD_HASH gesetzt ist.');
+    return { passwordHash: hash, password: '', mode: 'Hash aus ADMIN_PASSWORD_HASH' };
   }
-  const auth = createAuth({ passwordHash: env.ADMIN_PASSWORD_HASH || '', password: env.ADMIN_PASSWORD || '' });
-  if (!auth.configured) {
-    console.warn('[auth] Kein Admin-Passwort gesetzt – der Admin-Bereich bleibt gesperrt. Siehe .env.example.');
+  if (plain) {
+    if (hash) console.warn('[auth] ADMIN_PASSWORD_HASH enthält keinen gültigen Hash und wird ignoriert – es gilt ADMIN_PASSWORD.');
+    return { passwordHash: '', password: plain, mode: 'Passwort aus ADMIN_PASSWORD' };
+  }
+  if (hash) {
+    console.warn(
+      '[auth] ADMIN_PASSWORD_HASH enthält keinen Hash (muss mit „scrypt:“ beginnen). Der Wert wird als normales Passwort verwendet. Besser: `npm run admin:hash` oder die Variable ADMIN_PASSWORD nutzen.',
+    );
+    return { passwordHash: '', password: hash, mode: 'Passwort aus ADMIN_PASSWORD_HASH' };
+  }
+  return { passwordHash: '', password: '', mode: '' };
+}
+
+export function createAppApi(env = process.env, { production = false } = {}) {
+  const { passwordHash, password, mode } = resolveAdminCredentials(env);
+  const auth = createAuth({ passwordHash, password });
+  if (auth.configured) console.info(`[auth] Admin-Login aktiv (${mode}).`);
+  else console.warn('[auth] Kein Admin-Passwort gesetzt – der Admin-Bereich bleibt gesperrt. Siehe .env.example.');
+  if (production && !passwordHash && password) {
+    console.warn('[auth] Hinweis: Für den Produktivbetrieb wird ADMIN_PASSWORD_HASH (`npm run admin:hash`) empfohlen.');
   }
   const store = createStore({ dataDir: env.DATA_DIR || DEFAULT_DATA_DIR });
   return createApiHandler({

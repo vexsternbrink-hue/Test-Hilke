@@ -280,3 +280,37 @@ describe('ohne konfiguriertes Passwort', () => {
     assert.equal((await c.call('GET', '/api/admin/orders')).status, 401);
   });
 });
+
+describe('Admin-Zugangsdaten aus der Umgebung', async () => {
+  const { resolveAdminCredentials } = await import('../server/app.js');
+  const quiet = (fn) => {
+    const [w, i] = [console.warn, console.info];
+    console.warn = console.info = () => {};
+    try {
+      return fn();
+    } finally {
+      [console.warn, console.info] = [w, i];
+    }
+  };
+
+  test('gültiger Hash wird als Hash verwendet', () => {
+    const h = hashPassword('abc');
+    assert.equal(quiet(() => resolveAdminCredentials({ ADMIN_PASSWORD_HASH: ` ${h}\n` })).passwordHash, h);
+  });
+
+  test('Klartext in ADMIN_PASSWORD_HASH funktioniert als Passwort', () => {
+    const c = quiet(() => resolveAdminCredentials({ ADMIN_PASSWORD_HASH: 'Mein-Passwort ' }));
+    assert.equal(c.password, 'Mein-Passwort');
+    const auth = createAuth(c);
+    assert.equal(auth.verify('1.1.1.1', 'Mein-Passwort'), true);
+  });
+
+  test('ADMIN_PASSWORD hat Vorrang vor ungültigem Hash, Leerzeichen werden entfernt', () => {
+    const c = quiet(() => resolveAdminCredentials({ ADMIN_PASSWORD_HASH: 'quatsch', ADMIN_PASSWORD: '  geheim-123 ' }));
+    assert.equal(c.password, 'geheim-123');
+  });
+
+  test('nichts gesetzt → gesperrt', () => {
+    assert.equal(createAuth(quiet(() => resolveAdminCredentials({}))).configured, false);
+  });
+});
