@@ -3,3 +3,9 @@ dist
 .DS_Store
 *.log
 .vite
+
+# Lokale Zugangsdaten und Kundendaten – niemals committen
+.env
+.env.*
+!.env.example
+server/data/
