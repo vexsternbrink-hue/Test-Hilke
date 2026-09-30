@@ -1,0 +1,79 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-apple: #c41e3a;
+  --color-apple-dark: #8e1428;
+  --color-leaf: #4a7c23;
+  --color-leaf-light: #5a9130;
+  --color-cream: #f8f5f0;
+  --color-cream-dark: #efe7da;
+  --color-wood: #3e2723;
+  --color-wood-light: #5a3f35;
+  --color-sand: #a98a72;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-cream);
+  color: var(--color-wood);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-apple);
+  color: var(--color-cream);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+.eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 3.5rem;
+  padding: 0 1.75rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+.btn:hover {
+  transform: translateY(-2px);
+}
+.btn-primary {
+  background: var(--color-apple);
+  color: var(--color-cream);
+  box-shadow: 0 10px 30px -10px rgba(196, 30, 58, 0.6);
+}
+.btn-primary:hover {
+  background: var(--color-apple-dark);
+}
+.btn-outline {
+  border: 1.5px solid currentColor;
+}
+
+.glass {
+  background: rgba(248, 245, 240, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
